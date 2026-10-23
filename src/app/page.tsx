@@ -1,0 +1,18 @@
+import Link from "next/link";
+import { Suspense } from "react";
+import WithdrawnNotice from "@/components/WithdrawnNotice";
+import ProductCard from "@/components/ProductCard";
+import HeroArt from "@/components/HeroArt";
+import { getProducts } from "@/lib/products";
+import { dbConfigured } from "@/lib/supabase/server";
+// 카테고리 바로가기: 컬러 배경 + 흰색 선 아이콘 (직접 그린 SVG)
+const CATEGORY_TILES=[
+ {name:"조립PC",desc:"새 조립컴퓨터",href:"/products?category=완제품",cls:"cat-pc",d:"M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM9 6h6M9 9h6M12 18.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"},
+ {name:"중고PC",desc:"점검 완료 중고",href:"/products?category=중고PC",cls:"cat-used",d:"M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4M5 3v4h4M19 21v-4h-4"},
+ {name:"PC부품",desc:"CPU·그래픽카드 등",href:"/products?group=parts",cls:"cat-parts",d:"M8 7h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zM10 10h4v4h-4zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"},
+ {name:"PC견적",desc:"맞춤 견적 상담",href:"/estimate",cls:"cat-quote",d:"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 2h6v4H9zM8 12l2 2 4-4M8 18h8"},
+ {name:"A/S신청",desc:"점검·수리 접수",href:"/as",cls:"cat-as",d:"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"},
+];
+// 60초마다 새로 만들고 그 사이에는 만들어 둔 화면을 바로 보여줌 (관리자가 상품을 저장하면 즉시 갱신)
+export const revalidate=60;
+export default async function Home(){const products=await getProducts(true,8);const isDemo=!dbConfigured();return <><section className="hero"><div className="wide hero-inner"><div><span className="eyebrow">ASAN COMMART PC SPECIALIST</span><h1>내게 맞는 컴퓨터,<br/><em>직접 고르고 비교하세요.</em></h1><p>조립PC부터 중고컴퓨터, 부품 견적, 컴퓨터 수리까지. <br className="pc-only"/>아산컴마트의 컴퓨터 전문 쇼핑몰입니다.</p><div className="hero-actions"><Link href="/estimate" className="btn white">나만의 PC 견적 →</Link><Link href="/products" className="btn outline-white">전체 상품 보기</Link></div></div><div className="hero-art"><HeroArt/></div></div></section><Suspense fallback={null}><WithdrawnNotice/></Suspense>{isDemo&&<div className="wide notice">현재는 가상 상품·예시 금액으로 표시됩니다. 실제 판매를 시작하려면 Supabase를 연결하고 상품을 등록하세요.</div>}<section className="wide section"><div className="section-heading"><div><span className="eyebrow blue">SMART SHOPPING</span><h2>카테고리 바로가기</h2></div></div><div className="category-grid five">{CATEGORY_TILES.map(c=><Link className={`category-tile ${c.cls}`} key={c.name} href={c.href}><span className="cat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d={c.d}/></svg></span><strong>{c.name}</strong><small>{c.desc}</small></Link>)}</div></section><section className="wide section"><div className="section-heading"><div><span className="eyebrow blue">RECOMMENDED PRODUCTS</span><h2>추천 상품</h2></div><Link href="/products" className="text-link">전체보기 →</Link></div><div className="product-grid">{products.map(p=><ProductCard key={p.id} p={p} isDemo={isDemo}/>)}</div>{!products.length&&<div className="empty">등록된 상품이 없습니다. 관리자에서 상품을 등록하세요.</div>}</section><section className="wide section"><div className="feature-panel"><div><span className="eyebrow">CUSTOM PC CONFIGURATOR</span><h2>부품 하나씩 골라<br/>나만의 PC 견적 상담 받기</h2><p>원하는 부품을 고르고 연락처를 남기면 매장에서 호환성과 가격을 확인해 연락드립니다. 신청한 견적은 견적게시판에서 확인할 수 있습니다.</p><div className="hero-actions"><Link href="/estimate" className="btn white">PC 견적 시작 →</Link><Link href="/estimate/board" className="btn outline-white">견적게시판 보기</Link></div></div><div className="feature-symbol">⌘</div></div></section></>}
