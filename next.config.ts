@@ -13,3 +13,7 @@ const nextConfig: NextConfig = {
   },
 };
 export default nextConfig;
+
+images: {
+  unoptimized: true,
+},
