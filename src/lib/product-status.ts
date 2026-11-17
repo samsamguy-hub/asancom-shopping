@@ -6,6 +6,10 @@ export const BADGES = [
   { key: "NEW", cls: "new", help: "신상품" },
   { key: "특가", cls: "sale", help: "할인 행사 가격" },
   { key: "한정수량", cls: "limited", help: "수량 한정 판매 (남은 재고 수량 함께 표시)" },
+  // 아래 3개는 표시용 안내. 주문 배송비·출장설치비 계산에는 반영되지 않음 (배송·설치비 관리 기준 그대로)
+  { key: "무료배송", cls: "freeship", help: "배송비 무료 안내 (주문 배송비 자동 0원 아님)" },
+  { key: "출장가능", cls: "visit", help: "출장설치 가능 상품 (비용은 배송·설치비 관리 기준)" },
+  { key: "경품", cls: "gift", help: "경품 증정 상품 (경품 내용은 상품 설명에 직접 기재)" },
   { key: "중고", cls: "used", help: "중고상품 체크와 같음" },
 ] as const;
 export type BadgeKey = (typeof BADGES)[number]["key"];

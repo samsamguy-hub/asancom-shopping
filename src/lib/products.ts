@@ -3,6 +3,7 @@ import { demoProducts } from "@/lib/demo";
 import type { Product, ProductImage } from "@/lib/types";
 import { createPublicClient, dbConfigured } from "@/lib/supabase/server";
 import { IMAGE_COLUMNS, signPublicImages, sortImages } from "@/lib/images";
+import { discountRate } from "@/lib/product-status";
 // 전체 열 조회: 새 열(sold_out, badges)을 추가하는 SQL 적용 전에도 조회가 실패하지 않도록 열 이름을 고정하지 않음
 const PRODUCT_COLUMNS = "*";
 type Db = ReturnType<typeof createPublicClient>;
@@ -33,6 +34,43 @@ export async function getProducts(images = true, limit?: number): Promise<Produc
   // 목록 카드에는 대표(첫 번째) 공개 사진 1장만
   const signed = await signPublicImages(rows.flatMap(r => sortImages(r.product_images || []).slice(0, 1)));
   return rows.map(r => toProduct(r, signed.filter(s => s.product_id === r.id)));
+}
+// 메인 추천상품 정렬: 판매 공개 상품 "전체"를 기준으로 순서를 계산한 뒤, 정렬마다 앞쪽 perSort개만 사진과 함께 내려줌
+// (일부만 가져와서 정렬하는 문제 방지). 인기순은 supabase/product_popularity.sql 의 순위 함수(판매량 → 최근 30일 조회수)를 쓰며,
+// 함수가 아직 없으면(SQL 적용 전) popularReady=false → 화면에서 '준비 중'으로 비활성
+export const RECOMMEND_SORTS = ["popular", "latest", "discount", "priceAsc", "priceDesc"] as const;
+export type RecommendSort = (typeof RECOMMEND_SORTS)[number];
+export type Recommended = { products: Product[]; orders: Record<RecommendSort, string[]>; popularReady: boolean };
+const exactDiscount = (p: Pick<Product, "price" | "list_price">) => discountRate(p) > 0 ? (p.list_price! - p.price) / p.list_price! : 0;
+// 인기 순위 (상품 id → 순위). 함수 없음·오류 시 null (고객 화면은 계속 동작)
+async function getPopularityRank(): Promise<Map<string, number> | null> {
+  const { data, error } = await createPublicClient().rpc("product_popularity_rank");
+  if (error) { if (error.code !== "PGRST202") console.error("인기 순위 조회 실패", error.code, error.message); return null; }
+  return new Map(((data || []) as { product_id: string; rank: number }[]).map(r => [r.product_id, r.rank]));
+}
+export async function getRecommendedProducts(perSort = 24): Promise<Recommended> {
+  let all: Product[], popularity: Map<string, number> | null = null;
+  if (!dbConfigured()) all = demoProducts.filter(p => p.active);
+  else {
+    const [{ data, error }, pop] = await Promise.all([createPublicClient().from("products").select(PRODUCT_COLUMNS).eq("active", true).order("created_at", { ascending: false }), getPopularityRank()]);
+    if (error) throw new Error("상품 조회 실패: " + error.message);
+    all = (data || []) as Product[];
+    popularity = pop;
+  }
+  // 등록순(최신 먼저)이 기본. 같은 값끼리는 최신 등록 상품이 앞
+  const latest = [...all].sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+  const rank = new Map(latest.map((p, i) => [p.id, i]));
+  const by = (cmp: (a: Product, b: Product) => number) => [...latest].sort((a, b) => cmp(a, b) || rank.get(a.id)! - rank.get(b.id)!).slice(0, perSort).map(p => p.id);
+  // 할인율순: 정상가가 판매가보다 높은 상품만 실제 할인율로 정렬, 할인 없는 상품은 그 뒤에 최신순
+  // 인기제품순: 순위가 있는 상품(판매·조회 실적 있음)을 순위대로, 나머지는 그 뒤에 최신순
+  const popRank = (p: Product) => popularity?.get(p.id) ?? Number.MAX_SAFE_INTEGER;
+  const orders: Record<RecommendSort, string[]> = { popular: popularity ? by((a, b) => popRank(a) - popRank(b)) : [], latest: latest.slice(0, perSort).map(p => p.id), discount: by((a, b) => exactDiscount(b) - exactDiscount(a)), priceAsc: by((a, b) => a.price - b.price), priceDesc: by((a, b) => b.price - a.price) };
+  const ids = [...new Set(Object.values(orders).flat())];
+  const products = dbConfigured() ? await getProductsByIds(ids) : all.filter(p => ids.includes(p.id));
+  const found = new Set(products.map(p => p.id));
+  for (const k of RECOMMEND_SORTS) orders[k] = orders[k].filter(id => found.has(id));
+  // 카드에 쓰지 않는 긴 설명은 브라우저로 보내지 않음
+  return { products: products.map(p => ({ ...p, description: "" })), orders, popularReady: !!popularity };
 }
 // 장바구니·주문 검증용: 판매 공개 상품만(RLS + active 조건). 비공개·삭제 상품은 결과에서 빠짐. 대표 사진 1장 포함
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {

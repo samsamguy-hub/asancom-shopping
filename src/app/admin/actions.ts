@@ -71,7 +71,7 @@ export async function saveProduct(_prev:SaveProductState,formData:FormData):Prom
   const missing=(["sold_out","badges","list_price","deleted_was_active"] as const).find(c=>c in payload&&e.message.includes(c));
   if(e.code==="PGRST204"&&missing){delete payload[missing];if(missing!=="deleted_was_active")warnings.push(`${missing==="list_price"?"정상가":"품절·배지"}는 저장하지 않았습니다 (${missingColumnHint(e).trim()||"Supabase SQL 적용 필요"})`);result=await save();continue;}
   // 배지 허용 목록이 DB에 아직 옛 버전('중고' 없음) → 새 배지만 빼고 저장
-  if(e.code==="23514"&&/badges/.test(e.message)&&Array.isArray(payload.badges)&&(payload.badges as string[]).length){const old=["인기","임박","NEW","특가","한정수량"];const list=payload.badges as string[];const dropped=list.filter(b=>!old.includes(b));payload.badges=dropped.length?list.filter(b=>old.includes(b)).slice(0,5):[];warnings.push(`배지 ${dropped.join(", ")||"선택"}는 저장하지 않았습니다 (Supabase에서 supabase/product_badges.sql을 다시 실행하세요)`);result=await save();continue;}
+  if(e.code==="23514"&&/badges/.test(e.message)&&Array.isArray(payload.badges)&&(payload.badges as string[]).length){const old=["인기","임박","NEW","특가","한정수량"];const list=payload.badges as string[];const dropped=list.filter(b=>!old.includes(b));payload.badges=dropped.length?list.filter(b=>old.includes(b)).slice(0,5):[];warnings.push(`배지 ${dropped.join(", ")||"선택"}는 저장하지 않았습니다 (Supabase에서 supabase/product_badges_extra.sql을 실행하세요)`);result=await save();continue;}
   break;
  }
  if(result.error){

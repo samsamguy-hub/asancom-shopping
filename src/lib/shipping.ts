@@ -3,8 +3,7 @@ import type { ShippingOption } from "@/lib/pricing";
 // DB 연결 전 시연용 (supabase/shipping_options.sql·shipping_lead_time.sql 의 기본값과 같음)
 export const DEMO_SHIPPING: ShippingOption[] = [
   { id: "demo-parcel", name: "택배 배송", description: "전국 택배 발송 (제주·도서산간 추가 요금은 주문 상담 시 안내)", fee: 5000, lead_time: "평균 2~3일 소요" },
-  { id: "demo-asan", name: "출장 설치 - 아산 지역", description: "아산시 지역 방문 설치", fee: 0, lead_time: "1~2일 소요" },
-  { id: "demo-cheonan", name: "출장 설치 - 천안 지역", description: "천안시 지역 방문 설치", fee: 50000, lead_time: "1~2일 소요" },
+  { id: "demo-visit", name: "출장 설치 - 아산,천안,평택,예산,당진 전지역", description: "", fee: 0, lead_time: "1~2일 소요" },
   { id: "demo-pickup", name: "매장 방문 수령", description: "충남 아산시 온천대로 1408 (온양고 앞) 매장에서 직접 수령", fee: 0 },
 ];
 // 고객 화면·주문 계산용: 사용 중(active)인 방법만. 관리자로 로그인해 있어도 비활성 방법은 고객 계산에 쓰지 않음

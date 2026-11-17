@@ -117,7 +117,7 @@ on conflict (user_id) do nothing;
 - **먼저** Supabase SQL Editor에서 `supabase/product_badges.sql` 실행 (products에 `sold_out`, `badges` 열 추가. 실행 전에는 관리자 상품 저장이 실패합니다)
 - 관리자 목록의 `품절 처리 / 품절 해제` 또는 상품 수정 화면의 `품절 표시` → 재고 수량과 관계없이 고객 화면에 품절 표시, 장바구니 담기·견적 선택 불가
 - 재고 0인 상품도 자동으로 품절 표시
-- 배지: 인기, 임박, NEW, 특가, 한정수량(남은 수량 함께 표시), 중고. (중고 배지는 product_badges.sql 을 다시 실행해야 저장됩니다) 상품 수정 화면 체크박스 또는 CSV `배지` 열(쉼표 구분, 지우려면 `없음`)
+- 배지: 인기, 임박, NEW, 특가, 한정수량(남은 수량 함께 표시), 무료배송, 출장가능, 경품, 중고. (무료배송·출장가능·경품은 `supabase/product_badges_extra.sql` 실행 후 저장 가능. 표시용이며 주문 배송비·출장설치비 계산에는 반영되지 않음) (중고 배지는 product_badges.sql 을 다시 실행해야 저장됩니다) 상품 수정 화면 체크박스 또는 CSV `배지` 열(쉼표 구분, 지우려면 `없음`)
 
 ## 4-6. 정상가·할인율 표시
 - **먼저** Supabase SQL Editor에서 `supabase/product_list_price.sql` 실행 (products에 `list_price` 열 추가. 실행 전에는 관리자 상품 저장이 실패합니다)
@@ -128,7 +128,7 @@ on conflict (user_id) do nothing;
 ## 4-7. VAT 별도 가격·배송/설치비
 - 모든 상품 가격·조립비·배송/설치비는 **VAT 별도(공급가)**로 표시. 결제 예정 금액 = (상품 + 배송/설치비) + 부가세 10%(원 미만 버림). 규칙: `src/lib/pricing.ts`
 - 상세페이지·장바구니에는 부가세 포함 금액도 함께 표시 (최종 소비자 대상 가격표시 기준은 세무사 확인 권장)
-- **먼저** Supabase SQL Editor에서 `supabase/shipping_options.sql` 실행 → 기본 배송·설치 방법 4가지(택배 5,000원, 출장설치 아산 무료, 천안 50,000원, 매장 방문 수령) 생성
+- **먼저** Supabase SQL Editor에서 `supabase/shipping_options.sql` 실행 → 기본 배송·설치 방법 3가지(택배 5,000원, 출장설치 아산·천안·평택·예산·당진 전지역 무료, 매장 방문 수령) 생성
 - 관리자 → `배송·설치비 관리`에서 방법 추가·수정·숨김·삭제. 장바구니에서 고객이 선택하면 서버가 DB 금액으로 다시 계산
 - 온라인 결제(PG)는 아직 연결되지 않아 `결제하기` 버튼은 비활성화 상태입니다
 
@@ -245,3 +245,13 @@ src/
 supabase/schema.sql         DB 테이블, RLS 정책, 가상 데이터
 supabase/product_images.sql 상품사진 테이블, Storage 버킷, 사진 RLS 정책
 ```
+
+## 방문자 통계 · 인기제품순 · 추가 배지 (2026-11 추가 SQL)
+
+Supabase SQL Editor에서 아래 순서로 **각 파일 전체**를 실행합니다. 모두 여러 번 실행해도 안전하며 기존 상품·주문·사진 데이터는 바꾸지 않습니다.
+
+1. `supabase/visitor_stats.sql` — 관리자 대시보드 방문자 통계 (새 테이블 2개 + 함수 2개, 2년 지난 통계 자동 정리)
+2. `supabase/product_popularity.sql` — 메인 추천상품 '인기제품순' (판매 수량 → 최근 30일 조회수 순위 함수. 1번 실행 후)
+3. `supabase/product_badges_extra.sql` — 무료배송·출장가능·경품 배지 허용
+
+실행 전에는 각각 관리자 화면 안내 표시 / '인기제품순 (준비 중)' / 새 배지 저장 시 안내로 동작하며 사이트 오류는 없습니다.

@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from "next";
 import CartLink from "@/components/CartLink";
 import AccountLink from "@/components/AccountLink";
 import MobileTabBar from "@/components/MobileTabBar";
+import VisitTracker from "@/components/VisitTracker";
 import { INQUIRY_TYPES } from "@/lib/inquiry-rules";
 import { dbConfigured } from "@/lib/supabase/server";
 import { COMPANY, bizInfoUrl } from "@/lib/company";
@@ -209,7 +210,7 @@ export default function RootLayout({
                 개인정보 보호책임자{" "}
                 {COMPANY.privacyOfficer}
                 <br />
-                호스팅 제공 {COMPANY.hosting}
+                호스팅 제공: {COMPANY.hosting}
               </p>
             </div>
 
@@ -234,6 +235,7 @@ export default function RootLayout({
         </footer>
 
         <MobileTabBar configured={dbConfigured()} />
+        <VisitTracker />
       </body>
     </html>
   );

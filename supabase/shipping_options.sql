@@ -1,6 +1,6 @@
 -- 아산컴마트 배송·설치 방법과 비용 (관리자가 추가·수정 가능)
 -- 적용 대상: supabase/schema.sql 이 이미 적용된 프로젝트 (admins, is_admin 필요). Supabase SQL Editor에서 전체 실행
--- 하는 일: shipping_options 테이블 추가 + RLS + 처음 한 번만 기본 4가지 입력. 기존 상품·관리자·정책은 변경하지 않습니다.
+-- 하는 일: shipping_options 테이블 추가 + RLS + 처음 한 번만 기본 3가지 입력. 기존 상품·관리자·정책은 변경하지 않습니다.
 -- 금액은 상품 가격과 같이 VAT 별도 금액(공급가)입니다. 여러 번 실행해도 안전합니다.
 begin;
 
@@ -45,13 +45,12 @@ for each row execute function public.set_products_updated_at();
 insert into public.shipping_options (name, description, fee, sort_order)
 select * from (values
   ('택배 배송', '전국 택배 발송 (제주·도서산간 추가 요금은 주문 상담 시 안내)', 5000, 10),
-  ('출장 설치 - 아산 지역', '아산시 지역 방문 설치', 0, 20),
-  ('출장 설치 - 천안 지역', '천안시 지역 방문 설치', 50000, 30),
+  ('출장 설치 - 아산,천안,평택,예산,당진 전지역', '', 0, 20),
   ('매장 방문 수령', '충남 아산시 온천대로 1408 (온양고 앞) 매장에서 직접 수령', 0, 40)
 ) as v(name, description, fee, sort_order)
 where not exists (select 1 from public.shipping_options);
 
 commit;
 
--- 확인용 (선택): 기본 4가지가 보이면 정상
+-- 확인용 (선택): 기본 3가지가 보이면 정상
 -- select name, fee, active, sort_order from public.shipping_options order by sort_order;

@@ -5,18 +5,19 @@ export const COMPANY = {
   name: "아산컴마트",
   ceo: "김기정",
   bizNo: "312-25-92973",
-  mailOrderNo: "[확인 필요: 통신판매업 신고번호 제0000-충남아산-0000호]",
+  mailOrderNo: "제2026-충남아산-1095호",
   address: "충청남도 아산시 온천대로 1408 (온양고 앞)",
   phone: "041-542-3342",
   email: "samsamguy@naver.com",
-  hours: "[확인 필요: 영업시간 예) 평일 09:30~19:00, 토 10:00~17:00, 일·공휴일 휴무]",
+  hours: "평일 09:00~19:30, 토·일 10:00~18:30",
   parking: "길 건너 기찻길 공터 (열쇠가게 옆)",
-  hosting: "[확인 필요: 호스팅 제공자 예) Vercel Inc.]",
-  privacyOfficer: "[확인 필요: 개인정보 보호책임자 성명·직책]",
-  privacyContact: "041-542-3342 / samsamguy@naver.com",
+  hosting: "Vercel Inc.",
+  // 개인정보 보호책임자 = 대표자 (대표자·전화·이메일을 바꾸면 자동으로 함께 바뀜)
+  get privacyOfficer() { return `${this.ceo} (대표)`; },
+  get privacyContact() { return `${this.phone} / ${this.email}`; },
   // 약관·처리방침 시행일. 내용을 바꾸면 날짜도 바꾸고 이전 버전을 따로 보관하세요.
-  termsDate: "[확인 필요: 시행일]",
-  privacyDate: "[확인 필요: 시행일]",
+  termsDate: "2026년 11월 17일",
+  privacyDate: "2026년 11월 17일",
 };
 // 사업자등록번호 숫자 10자리가 입력된 경우에만 공정거래위원회 사업자정보 확인 링크 표시
 export const bizInfoUrl = () => {
