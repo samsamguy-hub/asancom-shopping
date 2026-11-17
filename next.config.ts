@@ -12,8 +12,8 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 86400,
   },
 };
-export default nextConfig;
-
 images: {
   unoptimized: true,
 },
+
+export default nextConfig;
