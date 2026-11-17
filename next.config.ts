@@ -11,11 +11,5 @@ const nextConfig: NextConfig = {
     imageSizes: [72, 120, 200, 320],
     minimumCacheTTL: 86400,
   },
-  reactStrictMode: true,
-
-};
-images: {
-  unoptimized: true,
-},
 
 export default nextConfig;
