@@ -1,5 +1,5 @@
-// CPU쿨러는 supabase/builder_specs.sql 적용 후 등록 가능 (DB 카테고리 제약)
-export const categories = ["완제품", "중고PC", "CPU", "메인보드", "메모리", "그래픽카드", "SSD", "파워", "케이스", "CPU쿨러", "노트북", "모니터", "주변기기"] as const;
+// CPU쿨러는 supabase/builder_specs.sql, 프리미엄·한정판·데스크톱세트는 supabase/product_menus.sql 적용 후 등록 가능 (DB 카테고리 제약)
+export const categories = ["프리미엄", "한정판", "완제품", "중고PC", "데스크톱세트", "CPU", "메인보드", "메모리", "그래픽카드", "SSD", "파워", "케이스", "CPU쿨러", "노트북", "모니터", "주변기기"] as const;
 export type Category = (typeof categories)[number];
 // "PC부품" 메뉴에 함께 보이는 부품 분류 (완제품·중고PC·노트북·모니터·주변기기 제외)
 export const partCategories: readonly Category[] = ["CPU", "메인보드", "메모리", "그래픽카드", "SSD", "파워", "케이스", "CPU쿨러"];
@@ -25,11 +25,15 @@ export type Product = {
   // 휴지통 (supabase/product_trash.sql). 값이 있으면 휴지통 상품
   deleted_at?: string | null;
   deleted_was_active?: boolean;
+  // 관리자 지정 추천 (supabase/product_featured.sql). null·없음 = 일반 상품, 1~999 = 추천 우선순위(작을수록 먼저)
+  featured_rank?: number | null;
 };
-// product_images 행 (IMAGE_COLUMNS) + 서버에서 발급한 서명 URL
+// product_images 행 (IMAGE_COLUMNS) + 서버에서 발급한 서명 URL. thumb·large = 축소본 URL (lib/images.ts, 없으면 url 사용)
 export type ProductImage = {
   id: string; product_id: string; storage_path: string; is_public: boolean;
-  sort_order: number; alt_text: string | null; created_at?: string; url?: string;
+  sort_order: number; alt_text: string | null; created_at?: string; url?: string; thumb?: string; large?: string;
 };
+// 관리자 카테고리 선택에 함께 보여줄 고객 메뉴 이름 (DB 값은 그대로)
+export const categoryLabel = (c: string) => ({ "완제품": "완제품 (조립컴퓨터)", "중고PC": "중고PC (중고컴퓨터)" } as Record<string, string>)[c] || c;
 export const formatKRW = (value: number) => new Intl.NumberFormat("ko-KR").format(value) + "원";
 export const isBuilderCategory = (category: Category) => ["CPU", "메인보드", "메모리", "그래픽카드", "SSD", "파워", "케이스", "CPU쿨러"].includes(category);

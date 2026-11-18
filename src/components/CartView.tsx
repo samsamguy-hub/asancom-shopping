@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import ProductPhoto from "@/components/ProductPhoto";
 import QuantityInput from "@/components/QuantityInput";
 import { refreshCart } from "@/app/cart/actions";
 import { removeFromCart, setCartQuantity, setShippingChoice, useCart, useShippingChoice } from "@/lib/cart-store";
@@ -47,7 +47,7 @@ export default function CartView(){
  return <div className="cart-layout"><div className="cart-lines">
   {items.map(item=>{const line=lineOf(item.productId);const dead=line?.status==="sold_out"||line?.status==="unavailable";
    return <div className={`cart-line${dead?" dead":""}`} key={item.productId}>
-    <div className="cart-thumb">{line?.imageUrl?<Image src={line.imageUrl} alt={line.imageAlt||""} width={144} height={144} sizes="72px"/>:<span aria-hidden="true">▣</span>}</div>
+    <div className="cart-thumb">{line?.imageUrl?<ProductPhoto src={line.imageUrl} fallback={line.imageFallback} alt={line.imageAlt||""} width={144} height={144} sizes="72px"/>:<span aria-hidden="true">▣</span>}</div>
     <div className="cart-info">{line?.slug?<Link href={`/products/${encodeURIComponent(line.slug)}`}><strong>{line.name}</strong></Link>:<strong>{line?"판매 중지된 상품":"확인 중..."}</strong>}
      {line?.unitPrice!==undefined&&<span className="muted">{formatKRW(line.unitPrice)} <small>({VAT_LABEL})</small> · 재고 {line.stock??0}개</span>}
      {line?.status==="sold_out"&&<span className="cart-status bad">{line.message}</span>}

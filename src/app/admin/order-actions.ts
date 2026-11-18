@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { pageQuery } from "@/lib/admin-paging";
 import { DEPOSIT_DAYS, ORDER_STATUS } from "@/lib/order-rules";
 // 주문 관리: 상태 변경·입금 확인·메모·취소(재고 복구). 관리자 세션 재확인 + DB RLS(is_admin)
 // 주문 기록은 전자상거래법상 5년 보관 대상이라 삭제 기능 없음
@@ -10,7 +11,7 @@ const str = (v: FormDataEntryValue | null) => typeof v === "string" ? v.trim() :
 function done(formData: FormData, failed: boolean): never {
   revalidatePath("/admin/orders"); revalidatePath("/admin"); revalidatePath("/mypage"); revalidatePath("/products"); revalidatePath("/products/[slug]", "page"); revalidatePath("/");
   const tab = str(formData.get("tab"));
-  redirect(`/admin/orders?status=${tab in ORDER_STATUS || tab === "open" || tab === "all" ? tab : "open"}&${failed ? "error=1" : "saved=1"}`);
+  redirect(`/admin/orders?status=${tab in ORDER_STATUS || tab === "open" || tab === "all" ? tab : "open"}&${failed ? "error=1" : "saved=1"}${pageQuery(formData)}`);
 }
 export async function setOrderStatus(formData: FormData) {
   const db = await requireAdmin(), id = str(formData.get("id")), status = str(formData.get("status"));

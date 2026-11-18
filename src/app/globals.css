@@ -195,3 +195,39 @@
 @keyframes rgb-flow-x{to{transform:translateX(-50%)}}@keyframes rgb-flow-y{to{transform:translateY(-50%)}}
 .hero-rgb[data-paused] .rgb-flow{animation-play-state:paused}
 @media(prefers-reduced-motion:reduce){.hero-rgb .rgb-light{display:none}}
+/* 상품목록 정렬 버튼: 메인 추천상품 정렬(.rec-sort)과 같은 모양, 모바일은 4개가 한 화면에 고르게 */
+.list-sorts{margin:0 0 16px}.list-sorts .rec-sort{display:inline-block;text-align:center;text-decoration:none}
+@media(max-width:680px){.list-sorts{display:grid;grid-template-columns:repeat(4,1fr);overflow:visible;margin-top:0}.list-sorts .rec-sort{padding:7px 2px;white-space:nowrap}}
+/* 관리자 추천상품 지정 (상품 등록·수정 폼, 상품 목록) */
+.featured-picker{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:14px 0}.featured-picker legend{font-weight:700;padding:0 6px}.featured-picker label{display:flex;align-items:center;gap:6px}.featured-picker input[type=number]{width:80px}.featured-picker small{flex-basis:100%}
+.featured-form{display:flex;align-items:center;gap:4px;white-space:nowrap}.featured-form input{width:58px;padding:4px 6px}.featured-on{color:#d14b00;font-weight:700}
+/* 상단 메뉴: 메뉴가 늘어나도 잘리지 않게 줄바꿈 허용 */
+.nav{flex-wrap:wrap;row-gap:8px}@media(min-width:1101px){.nav{gap:28px}}
+@media(max-width:680px){.nav{white-space:normal;overflow:visible;-webkit-mask-image:none;mask-image:none;gap:8px 14px;font-size:13px}}
+/* 관리자 상품 목록 표: 열 너비 고정(제목·내용 같은 세로선), 제목 가운데, 상품명 왼쪽, 가격 오른쪽, 관리 버튼 크기 통일. 좁은 화면은 표 영역만 가로 스크롤 */
+.product-admin-table{table-layout:fixed;min-width:1150px}.product-admin-table col.c-check{width:44px}.product-admin-table col.c-cat{width:92px}.product-admin-table col.c-price{width:170px}.product-admin-table col.c-stock{width:60px}.product-admin-table col.c-active{width:80px}.product-admin-table col.c-sold{width:92px}.product-admin-table col.c-featured{width:210px}.product-admin-table col.c-actions{width:196px}
+.product-admin-table th,.product-admin-table td{padding:12px 10px;font-size:13px;line-height:1.5;vertical-align:middle}.product-admin-table th{text-align:center;white-space:nowrap;font-weight:700;color:#3b4a63}.product-admin-table td{height:76px}
+.product-admin-table .col-name{text-align:left;word-break:keep-all;overflow-wrap:anywhere}.product-admin-table .admin-product-name{display:block;font-weight:600;color:var(--ink)}
+.product-admin-table .col-center{text-align:center}.product-admin-table .col-price{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.product-admin-table .col-price .admin-list-price{white-space:nowrap}
+.state-chip{display:inline-block;min-width:52px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700;color:#6b7891;background:#eef1f6}.state-chip.on{color:#0f7a3d;background:#e3f6ea}
+.product-admin-table .featured-cell{display:flex;flex-direction:column;align-items:center;gap:5px}.product-admin-table .featured-form{justify-content:center}.featured-off{color:var(--muted);font-size:12px}
+.act-btn{display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--blue);font-size:12px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer;text-decoration:none}.act-btn:hover{border-color:var(--blue);background:#f2f7ff}.act-btn.danger{color:#ac2828}.act-btn.danger:hover{border-color:#ac2828;background:#fff4f4}
+.admin-row-actions{display:grid;grid-template-columns:repeat(2,84px);gap:6px;justify-content:center}.admin-row-actions form{display:contents}.admin-row-actions .act-btn{width:100%}
+@media(max-width:680px){.product-admin-table th.check-col,.product-admin-table td.check-col{position:sticky;left:0;z-index:1;background:#fff}.product-admin-table th.check-col{background:#f4f7fc}.product-admin-table col.c-name{width:180px}}
+.product-admin-table .featured-form{gap:4px}.product-admin-table .featured-form input{width:52px}.product-admin-table .featured-cell .act-btn{min-width:48px;padding:0 8px}
+.admin-scroll-hint{display:none;margin:0 0 6px;font-size:12px;color:var(--muted);text-align:right}@media(max-width:1200px){.admin-scroll-hint{display:block}}
+/* 관리자 목록 페이지 넘김 (견적게시판 .pager 모양 재사용): 이전 | 1 | 2 | 3 | 다음, 현재 페이지 파란색 */
+.admin-pager{margin:18px 0 6px;text-align:center}.admin-pager .pager-info{margin:0;font-size:13px;color:var(--muted)}.admin-pager .pager{margin-top:10px;align-items:center}.admin-pager .pager-item{display:contents}.admin-pager .pager .disabled{min-width:36px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:#b8c0cc;cursor:default}.admin-pager .pager .gap{padding:0 2px;color:var(--muted)}.admin-pager .pager a:not(.active):hover{border-color:var(--blue);color:var(--blue)}
+/* 메인 추천상품 페이지 번호 (버튼형, .pager 모양과 같게) + 모바일에서 페이지 버튼 누르기 쉽게 */
+.rec-page-nav{margin-top:6px}.rec-page-nav .pager button{min-width:36px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:inherit;font:inherit;font-size:13px;cursor:pointer}.rec-page-nav .pager button.active{background:var(--blue);color:#fff;border-color:var(--blue)}.rec-page-nav .pager button.disabled{color:#b8c0cc;cursor:default}.rec-page-nav .pager button:not(.active):not(.disabled):hover{border-color:var(--blue);color:var(--blue)}
+@media(max-width:680px){.admin-pager .pager a,.admin-pager .pager button,.admin-pager .pager .disabled{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:40px}}
+/* 페이지 넘김 후 목록 위치로 이동할 때 위에 고정된 상단 메뉴에 가려지지 않게 */
+#product-list,.rec-wrap{scroll-margin-top:150px}@media(max-width:680px){#product-list,.rec-wrap{scroll-margin-top:215px}}
+
+/* 관리자 상품 검색 (검색창·버튼 가로 정렬, 모바일은 검색창 한 줄 + 버튼) */
+.admin-search{display:flex;align-items:center;gap:8px;margin:18px 0 8px}.admin-search input{flex:1;min-width:0;height:42px;padding:0 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;background:#fff}.admin-search input:focus{outline:2px solid #bcd3ff;border-color:var(--blue)}.admin-search .btn{height:42px;white-space:nowrap;display:inline-flex;align-items:center}.admin-search-result{margin:0 0 10px;font-size:13px;color:var(--muted)}.admin-search-result strong{color:var(--ink)}
+@media(max-width:680px){.admin-search{flex-wrap:wrap}.admin-search input{flex-basis:100%}.admin-search .btn{flex:1;justify-content:center}}
+/* 메인 카테고리 아이콘 추가분 색 (기존 .cat-* 와 같은 방식) */
+.cat-premium{--c1:#f6c443;--c2:#c8930a;--tint:#fff8e3}.cat-limited{--c1:#ff74b8;--c2:#d6338a;--tint:#fff0f7}.cat-desktop{--c1:#3fcbe2;--c2:#0e8fa8;--tint:#e9f9fc}.cat-monitor{--c1:#7a8dff;--c2:#3e50d6;--tint:#f0f2ff}.cat-all{--c1:#8796ad;--c2:#4a5872;--tint:#f2f4f8}
+/* 아주 좁은 휴대폰: 긴 아이콘 이름(데스크톱세트)은 두 줄로 (이름 속 줄바꿈 위치에서만) */
+@media(max-width:380px){.category-grid.five .category-tile strong{white-space:normal;word-break:keep-all;text-align:center;line-height:1.25}}

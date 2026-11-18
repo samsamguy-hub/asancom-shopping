@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { pageQuery } from "@/lib/admin-paging";
 import { AS_STATUS } from "@/lib/as-rules";
 // A/S 접수 관리: 상태·메모·삭제. 관리자 세션 재확인 + DB RLS(is_admin)
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -9,7 +10,7 @@ const str = (v: FormDataEntryValue | null) => typeof v === "string" ? v.trim() :
 function done(formData: FormData, failed: boolean): never {
   revalidatePath("/admin/as"); revalidatePath("/admin");
   const tab = str(formData.get("tab"));
-  redirect(`/admin/as?status=${tab in AS_STATUS || tab === "open" || tab === "all" ? tab : "open"}&${failed ? "error=1" : "saved=1"}`);
+  redirect(`/admin/as?status=${tab in AS_STATUS || tab === "open" || tab === "all" ? tab : "open"}&${failed ? "error=1" : "saved=1"}${pageQuery(formData)}`);
 }
 async function update(formData: FormData, values: Record<string, unknown>) {
   const db = await requireAdmin(), id = str(formData.get("id"));

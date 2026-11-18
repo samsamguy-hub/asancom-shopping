@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { pageQuery } from "@/lib/admin-paging";
 import { INQUIRY_STATUS, isInquiryType } from "@/lib/inquiry-rules";
 // 홈페이지·앱·창업 문의 관리: 상태·메모·삭제. 관리자 세션 재확인 + DB RLS(is_admin)
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -11,7 +12,7 @@ function done(formData: FormData, failed: boolean): never {
   const tab = str(formData.get("tab")), kind = str(formData.get("kind_tab"));
   const q = new URLSearchParams({ status: tab in INQUIRY_STATUS || tab === "open" || tab === "all" ? tab : "open", type: isInquiryType(kind) ? kind : "all" });
   q.set(failed ? "error" : "saved", "1");
-  redirect(`/admin/inquiries?${q}`);
+  redirect(`/admin/inquiries?${q}${pageQuery(formData)}`);
 }
 async function update(formData: FormData, values: Record<string, unknown>) {
   const db = await requireAdmin(), id = str(formData.get("id"));

@@ -5,11 +5,16 @@ import RecommendedProducts from "@/components/RecommendedProducts";
 import HeroArt from "@/components/HeroArt";
 import { getRecommendedProducts } from "@/lib/products";
 import { dbConfigured } from "@/lib/supabase/server";
-// 카테고리 바로가기: 컬러 배경 + 흰색 선 아이콘 (직접 그린 SVG)
+// 카테고리 바로가기: 컬러 배경 + 흰색 선 아이콘 (직접 그린 SVG). 상단 메뉴와 같은 순서·주소 + PC견적·A/S신청
 const CATEGORY_TILES=[
+ {name:"프리미엄",desc:"엄선한 고급 사양",href:"/products?category=프리미엄",cls:"cat-premium",d:"M4 17 3 7l5 4 4-7 4 7 5-4-1 10zM4 20.5h16"},
+ {name:"한정판",desc:"특별·수량 한정",href:"/products?category=한정판",cls:"cat-limited",d:"M6.5 3h11L22 9l-10 12L2 9zM2 9h20M9.5 3 7.5 9 12 21l4.5-12-2-6"},
  {name:"조립PC",desc:"새 조립컴퓨터",href:"/products?category=완제품",cls:"cat-pc",d:"M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM9 6h6M9 9h6M12 18.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"},
  {name:"중고PC",desc:"점검 완료 중고",href:"/products?category=중고PC",cls:"cat-used",d:"M20 11a8 8 0 0 0-14.9-4M4 13a8 8 0 0 0 14.9 4M5 3v4h4M19 21v-4h-4"},
+ {name:"데스크톱​세트",desc:"본체+모니터 세트",href:"/products?category=데스크톱세트",cls:"cat-desktop",d:"M2 5h12v9H2zM5.5 19h5M8 14v5M17 4h5v16h-5zM18.5 7.5h2M19.5 16.5v.01"},
+ {name:"모니터",desc:"모니터 단품",href:"/products?category=모니터",cls:"cat-monitor",d:"M3 4h18v12H3zM8 20h8M12 16v4"},
  {name:"PC부품",desc:"CPU·그래픽카드 등",href:"/products?group=parts",cls:"cat-parts",d:"M8 7h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zM10 10h4v4h-4zM10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"},
+ {name:"전체상품",desc:"모든 상품 보기",href:"/products",cls:"cat-all",d:"M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"},
  {name:"PC견적",desc:"맞춤 견적 상담",href:"/estimate",cls:"cat-quote",d:"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M9 2h6v4H9zM8 12l2 2 4-4M8 18h8"},
  {name:"A/S신청",desc:"점검·수리 접수",href:"/as",cls:"cat-as",d:"M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"},
 ];

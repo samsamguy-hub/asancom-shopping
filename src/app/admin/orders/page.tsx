@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { cancelExpiredOrders, cancelOrder, saveOrderMemo, setOrderStatus } from "@/app/admin/order-actions";
 import ConfirmButton from "@/components/ConfirmButton";
+import AdminPager from "@/components/AdminPager";
+import { keepPageInRange, pageRange, parsePage } from "@/lib/admin-paging";
 import { formatKRW } from "@/lib/types";
 import { CASH_RECEIPT, DEPOSIT_DAYS, depositDeadline, isDepositExpired, ORDER_STATUS, type Order, type OrderStatus } from "@/lib/order-rules";
 export const dynamic="force-dynamic";
@@ -9,14 +11,17 @@ export const dynamic="force-dynamic";
 const OPEN:OrderStatus[]=["pending","paid","preparing","shipping"];
 const tabs=[["open","진행중"],...Object.entries(ORDER_STATUS),["all","전체"]] as [string,string][];
 const FLOW:OrderStatus[]=["pending","paid","preparing","shipping","delivered"];
-export default async function OrdersAdmin({searchParams}:{searchParams:Promise<{status?:string,error?:string,saved?:string,expired?:string}>}){
+export default async function OrdersAdmin({searchParams}:{searchParams:Promise<{status?:string,error?:string,saved?:string,expired?:string,page?:string}>}){
  const db=await requireAdmin();const sp=await searchParams;
  const tab=tabs.some(([k])=>k===sp.status)?sp.status!:"open";
- let q=db.from("orders").select("*,order_items(product_name,category,unit_price,quantity,line_total)").order("created_at",{ascending:false}).limit(200);
+ // 10개씩: 최신 주문순(같은 시각이면 id 순) 현재 페이지만 조회 + 전체 개수. 탭을 바꾸면 1페이지
+ const page=parsePage(sp.page),{from,to}=pageRange(page),href=(p:number)=>`/admin/orders?status=${tab}${p>1?`&page=${p}`:""}`;
+ let q=db.from("orders").select("*,order_items(product_name,category,unit_price,quantity,line_total)",{count:"exact"}).order("created_at",{ascending:false}).order("id",{ascending:false}).range(from,to);
  q=tab==="all"?q:tab==="open"?q.in("status",OPEN):q.eq("status",tab);
- const {data,error}=await q;const rows=(data||[]) as Order[];
- const expired=rows.filter(o=>o.status==="pending"&&isDepositExpired(o.created_at)).length;
- const hidden=(o:Order)=><><input type="hidden" name="id" value={o.id}/><input type="hidden" name="tab" value={tab}/></>;
+ const {data,error,count}=await q;await keepPageInRange(page,count,error?.code,href,()=>{const c=db.from("orders").select("id",{count:"exact",head:true});return tab==="all"?c:tab==="open"?c.in("status",OPEN):c.eq("status",tab);});const rows=(data||[]) as Order[],total=count||0;
+ // 입금 기한 지난 입금대기 주문 수: 현재 페이지가 아니라 탭 전체 기준으로 개수만 조회 (입금대기가 포함되는 탭에서만)
+ const expired=tab==="open"||tab==="all"||tab==="pending"?(await db.from("orders").select("id",{count:"exact",head:true}).eq("status","pending").lt("created_at",new Date(Date.now()-DEPOSIT_DAYS*86400_000).toISOString())).count||0:0;
+ const hidden=(o:Order)=><><input type="hidden" name="id" value={o.id}/><input type="hidden" name="tab" value={tab}/><input type="hidden" name="page" value={page}/></>;
  return <div className="wide section"><Link href="/admin" className="text-link">← 관리자</Link><h1>주문 관리</h1><p>무통장입금 주문입니다. 통장에서 입금을 확인한 뒤 &lsquo;입금확인&rsquo;으로 바꾸고, 진행에 따라 상태를 바꿔 주세요. 주문 취소 시 재고가 자동으로 돌아옵니다.</p>
  {error?<p className="compat bad">주문 테이블이 없습니다. Supabase SQL Editor에서 supabase/members_orders.sql을 먼저 실행하세요.</p>:<>
  {sp.error&&<p className="compat bad" role="alert">처리하지 못했습니다. 다시 시도하세요.</p>}{sp.saved&&!sp.error&&<p className="compat good" role="status">처리되었습니다.</p>}
@@ -31,6 +36,6 @@ export default async function OrdersAdmin({searchParams}:{searchParams:Promise<{
   {o.status!=="canceled"&&<div className="table-actions">{FLOW.filter(s=>s!==o.status).map(s=><form key={s} action={setOrderStatus}>{hidden(o)}<input type="hidden" name="status" value={s}/><button className="btn secondary small">{ORDER_STATUS[s]}</button></form>)}
    <form action={cancelOrder}>{hidden(o)}<ConfirmButton className="link-button danger" message={`${o.order_no} 주문을 취소할까요?\n재고가 복구되며 되돌릴 수 없습니다. 이미 입금받았다면 환불해 주세요.`}>주문 취소</ConfirmButton></form></div>}
   <form action={saveOrderMemo} className="reply-form">{hidden(o)}<label>관리자 메모 (고객에게 보이지 않음)<textarea name="memo" maxLength={2000} rows={2} defaultValue={o.admin_memo||""} placeholder="입금 확인 내용, 송장번호 등"/></label><button className="btn secondary small">메모 저장</button></form>
- </li>)}</ul>:<div className="empty">해당 상태의 주문이 없습니다.</div>}</>}
+ </li>)}</ul>:<div className="empty">해당 상태의 주문이 없습니다.</div>}<AdminPager page={page} total={total} href={href}/></>}
  </div>;
 }

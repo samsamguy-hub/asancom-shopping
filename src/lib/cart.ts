@@ -30,7 +30,7 @@ export type CartLineStatus = "ok" | "adjusted" | "sold_out" | "unavailable";
 export type PricedLine = {
   productId: string; requested: number; quantity: number; status: CartLineStatus; message?: string;
   name?: string; slug?: string; category?: string; unitPrice?: number; stock?: number;
-  maxQuantity: number; lineTotal: number; imageUrl?: string; imageAlt?: string;
+  maxQuantity: number; lineTotal: number; imageUrl?: string; imageFallback?: string; imageAlt?: string;
 };
 // 금액(모두 원): subtotal 상품 공급가 합계 / shippingFee 배송·설치비(공급가) / supplyTotal 공급가 합계 / vat 부가세 10% / total 최종 금액
 // fingerprint: (상품 id, 수량, 단가, 배송 방법, 부가세, 최종 금액)의 해시. 이후 주문 생성 시 서버가 다시 계산해 고객이 본 금액과 같은지 비교

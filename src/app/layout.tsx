@@ -40,9 +40,10 @@ export const viewport: Viewport = {
   themeColor: "#1559c9",
 };
 
-// 홈페이지 메뉴
-const links = [
-  { href: "/products", label: "전체상품" },
+// 홈페이지 메뉴 (PC·모바일 같은 순서). 프리미엄·한정판도 일반 카테고리 메뉴와 같은 모양
+const links: { href: string; label: string }[] = [
+  { href: "/products?category=프리미엄", label: "프리미엄" },
+  { href: "/products?category=한정판", label: "한정판" },
   {
     href: "/products?category=완제품",
     label: "조립컴퓨터",
@@ -51,11 +52,14 @@ const links = [
     href: "/products?category=중고PC",
     label: "중고컴퓨터",
   },
+  { href: "/products?category=데스크톱세트", label: "데스크톱세트" },
+  { href: "/products?category=모니터", label: "모니터" },
   { href: "/products?group=parts", label: "PC부품" },
+  { href: "/products", label: "전체상품" },
   { href: "/estimate", label: "견적상담" },
   { href: "/estimate/board", label: "견적게시판" },
   { href: "/as", label: "A/S신청" },
-  { href: "/admin", label: "관리자" },
+  // 관리자 화면은 고객 메뉴에 표시하지 않음 (주소창에 /admin 직접 입력, 관리자 계정으로 로그인하면 자동 이동)
 ];
 
 export default function RootLayout({

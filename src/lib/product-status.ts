@@ -34,6 +34,19 @@ export const discountRate = (p: Pick<Product, "price" | "list_price">) =>
 export function checkListPrice(listPrice: number | null, price: number): string | null {
   return listPrice !== null && listPrice <= price ? `정상가(${listPrice.toLocaleString("ko-KR")}원)는 판매가(${price.toLocaleString("ko-KR")}원)보다 커야 합니다. 할인하지 않으면 비워 두세요.` : null;
 }
+// 관리자 지정 추천 (supabase/product_featured.sql 적용 전에는 모두 일반 상품 → 추천순 = 최신 등록순)
+export const FEATURED_MAX_RANK = 999;
+export const isFeatured = (p: Pick<Product, "featured_rank">) => typeof p.featured_rank === "number" && p.featured_rank >= 1;
+// 추천순: 추천상품 먼저 → 우선순위 숫자 작은 순 → 최신 등록순 (메인 추천상품·상품목록 공용)
+export function compareRecommended(a: Pick<Product, "featured_rank" | "created_at">, b: Pick<Product, "featured_rank" | "created_at">) {
+  const ra = isFeatured(a) ? a.featured_rank! : Number.MAX_SAFE_INTEGER, rb = isFeatured(b) ? b.featured_rank! : Number.MAX_SAFE_INTEGER;
+  return ra - rb || (b.created_at || "").localeCompare(a.created_at || "");
+}
+// 추천 우선순위 입력 정리 (관리자 폼·목록 공용). 빈 값·0·숫자 아님 = 추천 해제(null), 범위를 넘으면 1~999 로 맞춤
+export function parseFeaturedRank(v: string): number | null {
+  const n = Math.floor(Number(v.normalize("NFKC").replace(/[^0-9]/g, "")));
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, FEATURED_MAX_RANK) : null;
+}
 // 품절: 관리자가 품절로 지정했거나 재고 0. 품절 상품은 장바구니·견적·주문 불가
 export const isSoldOut = (p: Pick<Product, "sold_out" | "stock">) => Boolean(p.sold_out) || p.stock <= 0;
 export const soldOutReason = (p: Pick<Product, "sold_out" | "stock">) => p.sold_out ? "판매자가 품절 처리한 상품입니다." : "재고가 없는 상품입니다.";

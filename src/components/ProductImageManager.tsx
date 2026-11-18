@@ -4,8 +4,9 @@ import ImageFileInput from "@/components/ImageFileInput";
 import { imageErrorMessages, MAX_IMAGES_PER_PRODUCT, type ImageErrorCode } from "@/lib/image-rules";
 import type { Product, ProductImage } from "@/lib/types";
 // 관리자 상품 수정 화면의 사진 관리 (서버 액션마다 관리자 권한 재확인 + DB/Storage RLS)
-export default function ProductImageManager({product,images,error,saved}:{product:Product,images:ProductImage[],error?:string,saved?:boolean}){
- const hidden=(img?:ProductImage)=><><input type="hidden" name="product_id" value={product.id}/>{img&&<input type="hidden" name="image_id" value={img.id}/>}</>;
+// back: 관리자 목록의 검색어·페이지 (사진 처리 후에도 목록으로 돌아갈 때 유지)
+export default function ProductImageManager({product,images,error,saved,back=""}:{product:Product,images:ProductImage[],error?:string,saved?:boolean,back?:string}){
+ const hidden=(img?:ProductImage)=><><input type="hidden" name="product_id" value={product.id}/>{back&&<input type="hidden" name="back" value={back}/>}{img&&<input type="hidden" name="image_id" value={img.id}/>}</>;
  const message=error&&error in imageErrorMessages?imageErrorMessages[error as ImageErrorCode]:error?"사진 처리 중 오류가 발생했습니다.":"";
  return <section className="image-manager"><div><h2>상품 사진</h2><p className="small-muted">JPG·PNG·WEBP, 파일당 5MB 이하, 상품당 최대 {MAX_IMAGES_PER_PRODUCT}장. 첫 번째 사진이 대표 사진입니다. 고객에게는 &lsquo;공개&rsquo; 사진만, 그리고 판매 공개 상품의 사진만 보입니다.</p></div>
  {message&&<p className="compat bad" role="alert">{message}</p>}{saved&&!message&&<p className="compat good">사진 변경이 저장되었습니다.</p>}

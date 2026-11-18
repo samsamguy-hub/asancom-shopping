@@ -6,10 +6,11 @@ import { categories } from "@/lib/types";
 import { addImage, ImageError, validateImage, type ValidImage } from "@/lib/images";
 import { IMAGE_BUCKET, imageErrorMessages, type ImageErrorCode } from "@/lib/image-rules";
 import { coerceSpecValue, SPEC_FIELDS } from "@/lib/specs";
-import { checkListPrice, parseBadges, splitUsedBadge } from "@/lib/product-status";
+import { checkListPrice, parseBadges, parseFeaturedRank, splitUsedBadge } from "@/lib/product-status";
+import { adminListQuery } from "@/lib/admin-search";
 function string(v:FormDataEntryValue|null){return typeof v==="string"?v.trim():"";}
 // sold_out·badges·list_price 열이 아직 없을 때(SQL 미적용) 안내
-const missingColumnHint=(e:{code?:string,message:string})=>/list_price/.test(e.message)?"Supabase에서 supabase/product_list_price.sql을 먼저 실행하세요. ":e.code==="PGRST204"||/sold_out|badges/.test(e.message)?"Supabase에서 supabase/product_badges.sql을 먼저 실행하세요. ":"";
+const missingColumnHint=(e:{code?:string,message:string})=>/featured_rank/.test(e.message)?"Supabase에서 supabase/product_featured.sql을 먼저 실행하세요. ":/list_price/.test(e.message)?"Supabase에서 supabase/product_list_price.sql을 먼저 실행하세요. ":e.code==="PGRST204"||/sold_out|badges/.test(e.message)?"Supabase에서 supabase/product_badges.sql을 먼저 실행하세요. ":"";
 const refreshShop=()=>{revalidatePath("/");revalidatePath("/products");revalidatePath("/products/[slug]","page");revalidatePath("/builder");revalidatePath("/admin");};
 // 상품 등록·수정. 입력을 최대한 알아서 정리해 저장하고(오류 화면 없음), 저장하지 못한 칸만 알려줌
 // - 상품 URL 이름: 비우거나 한글·특수문자를 넣어도 자동으로 만들고, 겹치면 뒤에 글자를 붙임
@@ -30,6 +31,7 @@ function lenientInt(v:FormDataEntryValue|null,max:number):number|null{
 export async function saveProduct(_prev:SaveProductState,formData:FormData):Promise<SaveProductState> {
  const db=await requireAdmin();
  const warnings:string[]=[];
+ const back=adminListQuery(formData.get("back"));
  const id=string(formData.get("id"));
  if(id&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id))return {error:"상품 정보를 찾을 수 없습니다. 목록에서 다시 열어 주세요."};
  // 상품명: 앞뒤 공백·줄바꿈 정리, 160자 넘으면 자름 (DB 규칙: 2~160자)
@@ -54,7 +56,7 @@ export async function saveProduct(_prev:SaveProductState,formData:FormData):Prom
  // 상품 URL 이름: 영문 소문자·숫자·- 로 자동 정리. 비우면 새 상품은 자동 생성, 수정 시에는 기존 값 유지
  let slug=slugify(string(formData.get("slug")));
  if(slug.length<3)slug=id?"":randomSlug();
- const payload:Record<string,unknown>={name,category,description,price,list_price,stock,is_used:formData.get("is_used")==="on"||usedBadge.used,active:formData.get("active")==="on",sold_out:formData.get("sold_out")==="on",badges:usedBadge.badges,specs};
+ const payload:Record<string,unknown>={name,category,description,price,list_price,stock,is_used:formData.get("is_used")==="on"||usedBadge.used,active:formData.get("active")==="on",sold_out:formData.get("sold_out")==="on",badges:usedBadge.badges,specs,featured_rank:formData.get("featured")==="on"?parseFeaturedRank(string(formData.get("featured_rank")))??1:null};
  if(slug)payload.slug=slug;
  // 휴지통 상품을 수정하면 판매중지 유지 (공개 여부는 복구할 때 적용)
  if(id){const cur=await db.from("products").select("*").eq("id",id).maybeSingle();if(!cur.error&&!cur.data)return {error:"상품을 찾을 수 없습니다. 이미 영구 삭제되었을 수 있습니다. 목록에서 다시 열어 주세요."};if(cur.data?.deleted_at){payload.deleted_was_active=payload.active;payload.active=false;warnings.push("휴지통에 있는 상품이라 고객에게 보이지 않습니다. 판매 공개 설정은 휴지통에서 복구할 때 적용됩니다");}}
@@ -63,13 +65,13 @@ export async function saveProduct(_prev:SaveProductState,formData:FormData):Prom
  if(!id){try{photo=await validateImage(formData.get("photo"));}catch(e){photoError=e instanceof ImageError?e.code:"upload";}}
  const save=()=>id?db.from("products").update(payload).eq("id",id).select("id").single():db.from("products").insert(payload).select("id").single();
  let result=await save();
- for(let tries=0;result.error&&tries<5;tries++){
+ for(let tries=0;result.error&&tries<8;tries++){
   const e=result.error;
   // URL 이름이 다른 상품과 겹침 → 뒤에 글자를 붙여 다시 저장
   if(e.code==="23505"&&/slug/.test(e.message)){payload.slug=`${(payload.slug as string||slugify(name)||"p").slice(0,80)}-${crypto.randomUUID().slice(0,4)}`.replace(/^-/,"");if(!tries)warnings.push(`상품 URL 이름이 다른 상품과 겹쳐 '${payload.slug}'로 저장했습니다`);result=await save();continue;}
   // SQL 미적용으로 없는 열 → 그 값만 빼고 저장
-  const missing=(["sold_out","badges","list_price","deleted_was_active"] as const).find(c=>c in payload&&e.message.includes(c));
-  if(e.code==="PGRST204"&&missing){delete payload[missing];if(missing!=="deleted_was_active")warnings.push(`${missing==="list_price"?"정상가":"품절·배지"}는 저장하지 않았습니다 (${missingColumnHint(e).trim()||"Supabase SQL 적용 필요"})`);result=await save();continue;}
+  const missing=(["sold_out","badges","list_price","featured_rank","deleted_was_active"] as const).find(c=>c in payload&&e.message.includes(c));
+  if(e.code==="PGRST204"&&missing){const silent=missing==="deleted_was_active"||(missing==="featured_rank"&&payload.featured_rank==null);delete payload[missing];if(!silent)warnings.push(`${missing==="list_price"?"정상가":missing==="featured_rank"?"추천상품 설정":"품절·배지"}는 저장하지 않았습니다 (${missingColumnHint(e).trim()||"Supabase SQL 적용 필요"})`);result=await save();continue;}
   // 배지 허용 목록이 DB에 아직 옛 버전('중고' 없음) → 새 배지만 빼고 저장
   if(e.code==="23514"&&/badges/.test(e.message)&&Array.isArray(payload.badges)&&(payload.badges as string[]).length){const old=["인기","임박","NEW","특가","한정수량"];const list=payload.badges as string[];const dropped=list.filter(b=>!old.includes(b));payload.badges=dropped.length?list.filter(b=>old.includes(b)).slice(0,5):[];warnings.push(`배지 ${dropped.join(", ")||"선택"}는 저장하지 않았습니다 (Supabase에서 supabase/product_badges_extra.sql을 실행하세요)`);result=await save();continue;}
   break;
@@ -77,7 +79,7 @@ export async function saveProduct(_prev:SaveProductState,formData:FormData):Prom
  if(result.error){
   console.error("상품 저장 실패",result.error.code,result.error.message);
   const e=result.error;
-  return {error:e.code==="23514"&&/category/.test(e.message)?"이 카테고리는 아직 DB에 없습니다. Supabase에서 supabase/builder_specs.sql을 실행하세요."
+  return {error:e.code==="23514"&&/category/.test(e.message)?`이 카테고리는 아직 DB에 없습니다. Supabase에서 supabase/${["프리미엄","한정판","데스크톱세트"].includes(category)?"product_menus.sql":"builder_specs.sql"}을 실행하세요.`
    :e.code==="23514"?`DB 규칙에 맞지 않는 값이 있습니다. 상품명(2~160자)과 가격·재고를 확인하세요. (${e.message})`
    :e.code==="PGRST116"?"상품을 찾을 수 없습니다. 이미 영구 삭제되었거나 관리자 로그인이 끊겼을 수 있습니다. 목록에서 다시 열어 주세요."
    :e.code==="42501"?"관리자 권한이 확인되지 않았습니다. 다시 로그인해 주세요."
@@ -87,8 +89,9 @@ export async function saveProduct(_prev:SaveProductState,formData:FormData):Prom
  if(photo){try{await addImage(db,savedId,photo,formData.get("photo_public")==="on",null);}catch(e){photoError=e instanceof ImageError?e.code:"upload";}}
  refreshShop();
  // 상품은 저장됨. 빠진 칸이나 사진 문제가 있으면 수정 화면에서 알려줌
- if(photoError||warnings.length){const q=new URLSearchParams({saved:"1"});if(photoError)q.set("image_error",photoError);if(warnings.length)q.set("warn",warnings.join("\n").slice(0,1500));redirect(`/admin/products/${savedId}?${q}`);}
- redirect("/admin");
+ if(photoError||warnings.length){const q=new URLSearchParams({saved:"1"});if(photoError)q.set("image_error",photoError);if(warnings.length)q.set("warn",warnings.join("\n").slice(0,1500));if(back)q.set("back",back);redirect(`/admin/products/${savedId}?${q}`);}
+ // 목록에서 수정하러 왔으면 보던 검색어·페이지로 돌아감
+ redirect(back?`/admin?${back}`:"/admin");
 }
 export async function toggleProduct(formData:FormData){
  const db=await requireAdmin();const id=string(formData.get("id")),active=string(formData.get("active"))==="true";
@@ -102,6 +105,14 @@ export async function toggleSoldOut(formData:FormData){
  const db=await requireAdmin();const id=string(formData.get("id")),soldOut=string(formData.get("sold_out"))==="true";
  if(!/^[0-9a-f-]{36}$/.test(id))throw new Error("상품 ID 오류");
  const {error}=await db.from("products").update({sold_out:!soldOut}).eq("id",id);
+ if(error)throw new Error(missingColumnHint(error)+error.message);
+ refreshShop();
+}
+// 관리자 목록에서 바로 추천 우선순위 지정·변경·해제. 해제 버튼(featured_clear) 또는 featured 없음 = 일반 상품, featured=on 이면 순위 빈 값은 1순위
+export async function setFeaturedRank(formData:FormData){
+ const db=await requireAdmin();const id=string(formData.get("id"));
+ if(!/^[0-9a-f-]{36}$/.test(id))throw new Error("상품 ID 오류");
+ const {error}=await db.from("products").update({featured_rank:formData.get("featured")==="on"&&formData.get("featured_clear")!=="1"?parseFeaturedRank(string(formData.get("featured_rank")))??1:null}).eq("id",id);
  if(error)throw new Error(missingColumnHint(error)+error.message);
  refreshShop();
 }
@@ -124,7 +135,9 @@ export async function moveProductsToTrash(formData:FormData){
   moved+=data?.length||0;
  }
  refreshShop();revalidatePath("/admin/trash");
- redirect(`/admin?trashed=${moved}`);
+ // 목록의 개별 삭제는 보던 검색어·페이지로 (페이지가 비면 목록 화면이 마지막 페이지로 옮김)
+ const back=adminListQuery(formData.get("back"));
+ redirect(`/admin?trashed=${moved}${back?`&${back}`:""}`);
 }
 // 복구: 휴지통에서 꺼내 원래 공개 여부로 되돌림
 export async function restoreProducts(formData:FormData){

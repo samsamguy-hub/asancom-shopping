@@ -19,8 +19,9 @@ begin
   end loop;
 end $$;
 
+-- 허용 목록은 supabase/product_menus.sql 과 같게 유지 (이 파일을 다시 실행해도 프리미엄·한정판·데스크톱세트가 빠지지 않도록)
 alter table public.products add constraint products_category_check
-  check (category in ('완제품','중고PC','CPU','메인보드','메모리','그래픽카드','SSD','파워','케이스','CPU쿨러','노트북','모니터','주변기기'));
+  check (category in ('프리미엄','한정판','완제품','중고PC','데스크톱세트','CPU','메인보드','메모리','그래픽카드','SSD','파워','케이스','CPU쿨러','노트북','모니터','주변기기'));
 
 commit;
 

@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { pageQuery } from "@/lib/admin-paging";
 // 리뷰 관리: 승인·숨김·삭제·구매확인·판매자 답글만 (본문 수정·대리 작성 기능 없음). 관리자 세션 재확인 + DB RLS(is_admin)
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const str = (v: FormDataEntryValue | null) => typeof v === "string" ? v.trim() : "";
@@ -9,7 +10,7 @@ const tabs = ["pending", "approved", "hidden"];
 function done(formData: FormData, failed: boolean): never {
   revalidatePath("/admin/reviews"); revalidatePath("/admin"); revalidatePath("/products/[slug]", "page");
   const tab = str(formData.get("tab"));
-  redirect(`/admin/reviews?status=${tabs.includes(tab) ? tab : "pending"}&${failed ? "error=1" : "saved=1"}`);
+  redirect(`/admin/reviews?status=${tabs.includes(tab) ? tab : "pending"}&${failed ? "error=1" : "saved=1"}${pageQuery(formData)}`);
 }
 async function update(formData: FormData, values: Record<string, unknown>) {
   const db = await requireAdmin(), id = str(formData.get("id"));

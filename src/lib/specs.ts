@@ -33,10 +33,10 @@ export const SPEC_FIELDS: SpecField[] = [
   { key: "cooler_height_mm", label: "공랭 쿨러 높이 mm", csv: "쿨러높이mm", kind: "int", max: 300, group: "CPU쿨러", categories: ["CPU쿨러"] },
   { key: "radiator_mm", label: "수랭 라디에이터 크기 mm", csv: "라디에이터mm", kind: "int", max: 480, group: "CPU쿨러", categories: ["CPU쿨러"], placeholder: "240" },
   { key: "cooler_tdp_w", label: "쿨러 냉각 성능 TDP W", csv: "쿨러TDPW", kind: "int", max: 1000, group: "CPU쿨러", categories: ["CPU쿨러"] },
-  { key: "cpu", label: "완제품 CPU 표기", csv: "완제품CPU", kind: "text", group: "완제품 표시용", categories: ["완제품", "중고PC", "노트북"] },
-  { key: "ram", label: "완제품 메모리 표기", csv: "완제품메모리", kind: "text", group: "완제품 표시용", categories: ["완제품", "중고PC", "노트북"] },
-  { key: "graphics", label: "완제품 GPU 표기", csv: "완제품GPU", kind: "text", group: "완제품 표시용", categories: ["완제품", "중고PC", "노트북"] },
-  { key: "storage", label: "완제품 저장장치 표기", csv: "완제품저장장치", kind: "text", group: "완제품 표시용", categories: ["완제품", "중고PC", "노트북"] },
+  { key: "cpu", label: "완제품 CPU 표기", csv: "완제품CPU", kind: "text", group: "완제품 표시용", categories: ["프리미엄", "한정판", "완제품", "중고PC", "데스크톱세트", "노트북"] },
+  { key: "ram", label: "완제품 메모리 표기", csv: "완제품메모리", kind: "text", group: "완제품 표시용", categories: ["프리미엄", "한정판", "완제품", "중고PC", "데스크톱세트", "노트북"] },
+  { key: "graphics", label: "완제품 GPU 표기", csv: "완제품GPU", kind: "text", group: "완제품 표시용", categories: ["프리미엄", "한정판", "완제품", "중고PC", "데스크톱세트", "노트북"] },
+  { key: "storage", label: "완제품 저장장치 표기", csv: "완제품저장장치", kind: "text", group: "완제품 표시용", categories: ["프리미엄", "한정판", "완제품", "중고PC", "데스크톱세트", "노트북"] },
 ];
 export const specLabel = (key: string) => SPEC_FIELDS.find(f => f.key === key)?.label || key;
 

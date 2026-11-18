@@ -56,10 +56,33 @@ export const sortImages = (images: ProductImage[]) => [...images].sort((a, b) =>
 // (매번 새 주소를 만들면 브라우저가 같은 사진을 계속 새로 받음). 비로그인 권한으로 발급 → 공개 사진만 발급됨 (Storage RLS)
 const PUBLIC_SIGN_SECONDS = 3 * 3600, REUSE_MIN_LEFT_MS = 70 * 60_000;
 const signedCache = new Map<string, { url: string; exp: number }>();
-export async function signPublicImages(images: ProductImage[]): Promise<ProductImage[]> {
+// 축소본: Supabase Storage 이미지 변환(Pro 요금제, 사용량 과금 가능). .env 의 SUPABASE_IMAGE_TRANSFORM=on 일 때만 사용하고,
+// 꺼져 있거나 발급에 실패하면 축소본 없이 원본 url 만 씀. 원본 파일·버킷·url 은 그대로 (변환본은 Supabase가 따로 만들어 전송)
+// thumb: 목록 카드·장바구니·상세 작은 사진, large: 상세 큰 사진. 가로세로 최대 픽셀(비율 유지, 형식은 브라우저에 맞게 WebP)
+export const IMAGE_VARIANTS = { thumb: 400, large: 1200 } as const;
+export type ImageVariant = keyof typeof IMAGE_VARIANTS;
+const transformEnabled = () => process.env.SUPABASE_IMAGE_TRANSFORM === "on";
+const cached = (key: string, now: number) => { const c = signedCache.get(key); return c && c.exp - now > REUSE_MIN_LEFT_MS ? c.url : undefined; };
+// 변환 서명 URL은 한 장씩만 발급 가능 → 동시에 8개씩
+async function signVariants(paths: string[], variant: ImageVariant, now: number) {
+  const urls = new Map<string, string>();
+  const todo = paths.filter(p => { const u = cached(`${variant}:${p}`, now); if (u) urls.set(p, u); return !u; });
+  if (!todo.length) return urls;
+  const { createPublicClient } = await import("@/lib/supabase/server");
+  const bucket = createPublicClient().storage.from(IMAGE_BUCKET), size = IMAGE_VARIANTS[variant];
+  for (let i = 0; i < todo.length; i += 8) {
+    await Promise.all(todo.slice(i, i + 8).map(async path => {
+      const { data, error } = await bucket.createSignedUrl(path, PUBLIC_SIGN_SECONDS, { transform: { width: size, height: size, resize: "contain" } });
+      if (error || !data?.signedUrl) { console.error("상품사진 축소본 URL 발급 실패 (원본 사용)", error?.message); return; }
+      urls.set(path, data.signedUrl); signedCache.set(`${variant}:${path}`, { url: data.signedUrl, exp: now + PUBLIC_SIGN_SECONDS * 1000 });
+    }));
+  }
+  return urls;
+}
+export async function signPublicImages(images: ProductImage[], variants: ImageVariant[] = []): Promise<ProductImage[]> {
   if (!images.length) return images;
   const now = Date.now(), urls = new Map<string, string>();
-  for (const i of images) { const c = signedCache.get(i.storage_path); if (c && c.exp - now > REUSE_MIN_LEFT_MS) urls.set(i.storage_path, c.url); }
+  for (const i of images) { const u = cached(i.storage_path, now); if (u) urls.set(i.storage_path, u); }
   const missing = [...new Set(images.map(i => i.storage_path).filter(p => !urls.has(p)))];
   if (missing.length) {
     const { createPublicClient } = await import("@/lib/supabase/server");
@@ -68,7 +91,12 @@ export async function signPublicImages(images: ProductImage[]): Promise<ProductI
     if (signedCache.size > 3000) signedCache.clear();
     for (const d of data || []) if (d.path && d.signedUrl && !d.error) { urls.set(d.path, d.signedUrl); signedCache.set(d.path, { url: d.signedUrl, exp: now + PUBLIC_SIGN_SECONDS * 1000 }); }
   }
-  return images.map(i => ({ ...i, url: urls.get(i.storage_path) }));
+  // 원본 서명이 된 사진만 축소본 발급 (원본을 볼 수 없는 사진은 축소본도 없음)
+  const paths = [...new Set(images.map(i => i.storage_path).filter(p => urls.has(p)))];
+  const [thumbs, larges] = transformEnabled() && paths.length
+    ? await Promise.all((["thumb", "large"] as const).map(v => variants.includes(v) ? signVariants(paths, v, now) : new Map<string, string>()))
+    : [new Map<string, string>(), new Map<string, string>()];
+  return images.map(i => ({ ...i, url: urls.get(i.storage_path), thumb: thumbs.get(i.storage_path), large: larges.get(i.storage_path) }));
 }
 // 관리자 화면용 1시간짜리 서명 URL (비공개 사진 포함, 재사용 안 함). 권한이 없는 사진은 Storage RLS가 거부하여 url 없이 반환
 export async function signImages(db: Db, images: ProductImage[]): Promise<ProductImage[]> {

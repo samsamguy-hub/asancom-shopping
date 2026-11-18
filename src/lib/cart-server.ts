@@ -14,7 +14,7 @@ export async function priceCart(raw: unknown, shippingId?: unknown): Promise<Pri
   const lines: PricedLine[] = items.map(({ productId, quantity: requested }) => {
     const p = products.get(productId);
     if (!p) return { productId, requested, quantity: 0, status: "unavailable", message: "판매가 중지되었거나 없는 상품입니다.", maxQuantity: 0, lineTotal: 0 };
-    const info = { name: p.name, slug: p.slug, category: p.category, unitPrice: p.price, stock: p.stock, imageUrl: p.images?.[0]?.url, imageAlt: p.images?.[0]?.alt_text || p.name };
+    const info = { name: p.name, slug: p.slug, category: p.category, unitPrice: p.price, stock: p.stock, imageUrl: p.images?.[0]?.thumb || p.images?.[0]?.url, imageFallback: p.images?.[0]?.url, imageAlt: p.images?.[0]?.alt_text || p.name };
     // 관리자 품절 지정 또는 재고 0 → 주문 불가
     const maxQuantity = isSoldOut(p) ? 0 : Math.min(p.stock, MAX_QTY_PER_ITEM);
     if (maxQuantity === 0) return { productId, requested, quantity: 0, status: "sold_out", message: `${soldOutReason(p)} 합계에서 제외됩니다.`, maxQuantity, lineTotal: 0, ...info };

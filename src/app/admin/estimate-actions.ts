@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
+import { pageQuery } from "@/lib/admin-paging";
 import { ESTIMATE_STATUS, isEstimateCategory } from "@/lib/estimate-rules";
 import { DEFAULT_ESTIMATE_PARTS } from "@/lib/estimate-defaults";
 // 견적 부품 목록·견적 문의 관리. 모든 동작에서 관리자 세션 재확인 + DB RLS(is_admin)
@@ -68,7 +69,7 @@ export async function deleteEstimatePart(formData: FormData) {
 function requestsDone(formData: FormData, failed: boolean): never {
   revalidatePath("/admin/estimates"); revalidatePath("/admin"); revalidatePath("/estimate/board"); revalidatePath("/estimate/board/[no]", "page");
   const tab = str(formData.get("tab"));
-  redirect(`/admin/estimates?status=${tab in ESTIMATE_STATUS || tab === "all" ? tab : "all"}&${failed ? "error=1" : "saved=1"}`);
+  redirect(`/admin/estimates?status=${tab in ESTIMATE_STATUS || tab === "all" ? tab : "all"}&${failed ? "error=1" : "saved=1"}${pageQuery(formData)}`);
 }
 export async function setEstimateStatus(formData: FormData) {
   const db = await requireAdmin(), id = str(formData.get("id")), status = str(formData.get("status"));
